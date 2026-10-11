@@ -7,8 +7,8 @@ A playful materials-science app for high school and first-year college students.
 Three ways to start:
 
 - **I know what I'm testing:** name the object and material, set the conditions.
-- **I have an idea:** describe what you want to make ("a lunchbox that keeps food warm") and get three material picks, each one tap away from a full test. Leaving the material blank in the form does the same.
-- **Snap a photo:** a small vision model running **on your device** looks at the photo, then Claude names the likely material and whether something else would do better.
+- **I have an idea:** describe what you want to make ("a lunchbox that keeps food warm"), by typing or tapping the mic, and get three material picks, each one tap away from a full test. Leaving the material blank in the form does the same.
+- **Snap a photo:** the photo is shrunk in the browser and sent to Claude, which names the likely material (plus runner-ups) and whether something else would do better. Students can correct a wrong guess.
 
 Every finished test is saved to a **lab notebook** in the browser (no account, no server storage) and can be reopened instantly.
 
@@ -28,15 +28,17 @@ npm run typecheck && npm run lint
 
 > The project folder name contains a `?`, which breaks webpack's path handling, so the `dev` and `build` scripts use Turbopack (`--turbopack`).
 
-## On-device AI
+## Where data goes
 
-The photo feature runs a vision-language model entirely in the browser:
+| Feature | Runs where | What leaves the device |
+| --- | --- | --- |
+| Screening, re-tests, idea picks, doodles | Claude via this app's server | The text you entered |
+| Snap a photo | Claude Sonnet 5.5 (vision) via the server | A downscaled JPEG (≤1024 px), used for that request only and not stored |
+| Mic (idea box) | The browser's speech recognition (Chrome: Google, Safari: Apple) | Your voice, to the browser vendor's speech service |
+| Mic fallback (e.g. Firefox, or after a speech-service network error) | On-device Whisper (`onnx-community/whisper-base.en`, ~77 MB one-time download) via Transformers.js | Nothing |
+| Lab notebook | Browser `localStorage` | Nothing |
 
-- **Model:** [SmolVLM](https://huggingface.co/HuggingFaceTB/SmolVLM-500M-Instruct) via [Transformers.js](https://huggingface.co/docs/transformers.js) 4.3, in a Web Worker so the page never freezes. With WebGPU it runs SmolVLM-500M with 4-bit weights (~360 MB); without WebGPU it falls back to SmolVLM-256M on the CPU (WebAssembly).
-- **One-time download:** model files come from the Hugging Face Hub on first use and are cached by the browser. After that the on-device step works offline.
-- **Privacy:** the photo never leaves the device. Only the model's short text description ("a white ceramic mug with a handle…") is sent to Claude, which combines it with what such objects are usually made of.
-
-Code: `src/lib/vision/` (worker + client) and `src/components/photo/PhotoPanel.tsx`.
+Code: `src/lib/identify/` and `src/components/photo/PhotoPanel.tsx` (photo), `src/components/ui/MicButton.tsx` and `src/lib/voice/` (mic).
 
 ## Stack
 
@@ -76,9 +78,9 @@ src/
   app/api/screen/route.ts      POST endpoint: validates input, calls Claude, maps errors
   app/api/doodle/route.ts      POST endpoint: object caricature (returns 204 on any failure)
   app/api/suggest/route.ts     POST endpoint: idea (or object without material) → 3 material picks
-  app/api/identify/route.ts    POST endpoint: on-device photo description (text only) → likely material
+  app/api/identify/route.ts    POST endpoint: downscaled photo → likely material (Claude vision)
   lib/anthropic.ts             the shared Claude client
-  lib/vision/                  on-device vision model (Web Worker) and its client
+  lib/voice/                   on-device Whisper fallback for the mic (Web Worker) and its client
   lib/suggest/, lib/identify/  Claude calls and client helpers for those two endpoints
   lib/notebook.ts              lab notebook: saved tests in localStorage
   lib/doodle/                  doodle Claude call, allowlist SVG sanitizer, client cache
@@ -99,7 +101,7 @@ src/
     doodle/ObjectDoodle.tsx    renders the caricature with the shared cute face
     landing/SpecimenShelf.tsx  pokeable specimens whose eyes follow the cursor
     suggest/                   idea box, material picks, thinking state
-    photo/PhotoPanel.tsx       snap a photo → on-device description → likely material
+    photo/PhotoPanel.tsx       snap a photo → Claude → likely material, runner-ups, corrections
     notebook/                  notebook link and saved-test list
     explore/ExploreApp.tsx     flow state: form / idea / photo → chamber → results → re-test
   app/                         `/` landing, `/explore` app, `/notebook`
