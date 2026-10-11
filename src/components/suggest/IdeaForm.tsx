@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
+import { MicButton, appendSpoken } from "@/components/ui/MicButton";
 
 const EXAMPLES = [
   "a phone stand for my desk that looks cool",
@@ -37,21 +38,27 @@ export function IdeaForm({ initial, error, onSubmit }: { initial: string; error?
       <label htmlFor={id} className="font-display text-2xl text-ink">
         What do you want to make?
       </label>
-      <textarea
-        id={id}
-        rows={2}
-        maxLength={600}
-        value={idea}
-        onChange={(e) => setIdea(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && !e.shiftKey && canSubmit) {
-            e.preventDefault();
-            onSubmit(idea.trim());
-          }
-        }}
-        placeholder={`e.g. ${EXAMPLES[hint]}`}
-        className="w-full resize-none rounded-2xl border-2 border-ink/20 bg-paper-raised/80 px-4 py-3 text-lg text-ink placeholder:text-muted focus:border-iris focus:outline-none"
-      />
+      <div className="relative">
+        <textarea
+          id={id}
+          rows={2}
+          maxLength={600}
+          value={idea}
+          onChange={(e) => setIdea(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey && canSubmit) {
+              e.preventDefault();
+              onSubmit(idea.trim());
+            }
+          }}
+          placeholder={`e.g. ${EXAMPLES[hint]}`}
+          className="w-full resize-none rounded-2xl border-2 border-ink/20 bg-paper-raised/80 py-3 pl-4 pr-14 text-lg text-ink placeholder:text-muted focus:border-iris focus:outline-none"
+        />
+        <span className="absolute bottom-3 right-2.5">
+          <MicButton label="your idea" onText={(t) => setIdea((cur) => appendSpoken(cur, t).slice(0, 600))} />
+        </span>
+      </div>
+      <p className="-mt-2 text-sm text-muted">Tap the mic and just say it.</p>
       <div>
         <p className="mb-2 font-display italic text-soft">Or borrow one:</p>
         <div className="flex flex-wrap gap-2">

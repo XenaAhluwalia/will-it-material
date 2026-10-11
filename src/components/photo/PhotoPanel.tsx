@@ -3,11 +3,10 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useId, useRef, useState } from "react";
 import type { Identification } from "@/types/identify";
-import { describePhoto, onVisionStatus, shrinkPhoto, warmUpVision, type VisionStatus } from "@/lib/vision/client";
-import { fetchIdentification } from "@/lib/identify/client";
+import { fetchIdentification, photoToBase64 } from "@/lib/identify/client";
 import { Specimen } from "@/components/chamber/Specimen";
 
-type Stage = "idle" | "looking" | "asking" | "done" | "error";
+type Stage = "idle" | "looking" | "done" | "error";
 
 interface Props {
   onTest: (id: Identification) => void;
@@ -15,44 +14,26 @@ interface Props {
 }
 
 /**
- * "Snap a photo": a small vision model running in this browser describes the object,
- * then Claude reads only that text description to name the likely material.
+ * "Snap a photo": the photo is shrunk in the browser, then Claude looks at it and names
+ * the likely material. The photo is used for that one request and not stored.
  */
 export function PhotoPanel({ onTest, onSuggestBetter }: Props) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [stage, setStage] = useState<Stage>("idle");
-  const [seen, setSeen] = useState("");
+  const [image, setImage] = useState("");
   const [result, setResult] = useState<Identification | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [vision, setVision] = useState<VisionStatus>({ percent: null, ready: false, device: null });
   const [dragging, setDragging] = useState(false);
 
-  useEffect(() => onVisionStatus(setVision), []);
   useEffect(() => () => void (photoUrl && URL.revokeObjectURL(photoUrl)), [photoUrl]);
 
-  const handleFile = async (file: File | undefined) => {
-    if (!file || !file.type.startsWith("image/")) return;
-    setPhotoUrl(URL.createObjectURL(file));
-    setResult(null);
-    setError(null);
-    setSeen("");
+  const identify = async (photo: string, correction?: string) => {
     setStage("looking");
-    warmUpVision();
-    let description: string;
+    setError(null);
     try {
-      description = await describePhoto(await shrinkPhoto(file));
-      if (!description) throw new Error("empty");
-      setSeen(description);
-    } catch {
-      setStage("error");
-      setError("The on-device model couldn't read that photo. Try another one, with one object filling the frame.");
-      return;
-    }
-    setStage("asking");
-    try {
-      setResult(await fetchIdentification(description));
+      setResult(await fetchIdentification(photo, correction));
       setStage("done");
     } catch (e) {
       setStage("error");
@@ -60,16 +41,38 @@ export function PhotoPanel({ onTest, onSuggestBetter }: Props) {
     }
   };
 
+  const handleFile = async (file: File | undefined) => {
+    if (!file || !file.type.startsWith("image/")) return;
+    setPhotoUrl(URL.createObjectURL(file));
+    setResult(null);
+    setStage("looking");
+    let photo: string;
+    try {
+      photo = await photoToBase64(file);
+    } catch {
+      setStage("error");
+      setError("We couldn't open that photo. Try a JPEG or PNG.");
+      return;
+    }
+    setImage(photo);
+    await identify(photo);
+  };
+
+  /** Ask again with the student's own correction ("it's a metal water bottle"). */
+  const correct = (correction: string) => identify(image, correction);
+
+  /** Swap in one of the runner-up materials as the main guess. */
+  const pickAlternative = (name: string) =>
+    setResult((r) => (r ? { ...r, material: name, alternatives: [r.material, ...r.alternatives.filter((a) => a !== name)].slice(0, 2) } : r));
+
   const reset = () => {
     setPhotoUrl(null);
     setStage("idle");
     setResult(null);
     setError(null);
-    setSeen("");
+    setImage("");
     if (inputRef.current) inputRef.current.value = "";
   };
-
-  const downloading = stage === "looking" && !vision.ready;
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-5">
@@ -107,7 +110,7 @@ export function PhotoPanel({ onTest, onSuggestBetter }: Props) {
           </span>
           <span className="btn mt-1 bg-iris px-6 py-2.5 text-lg text-paper-raised">Choose a photo</span>
           <span className="text-sm text-muted">
-            <span className="marker font-display italic text-ink">stays on your device</span> A tiny AI model looks at it right here in your browser.
+Your photo is shrunk, checked by Claude and not saved.
           </span>
         </label>
       ) : (
@@ -126,36 +129,14 @@ export function PhotoPanel({ onTest, onSuggestBetter }: Props) {
           )}
 
           <div className="flex min-w-0 flex-col gap-3" aria-live="polite">
-            <Step done={Boolean(seen)} active={stage === "looking"} label={downloading ? "Waking up the on-device model" : "Looking at your photo"}>
-              {downloading && (
-                <div className="mt-2">
-                  <div className="h-3 overflow-hidden rounded-full border-2 border-ink bg-paper-raised">
-                    <motion.div className="h-full bg-iris" animate={{ width: `${vision.percent ?? 2}%` }} />
-                  </div>
-                  <p className="mt-1 text-sm text-muted">
-                    One-time download ({vision.percent ?? 0}%). After this it works even offline.
-                  </p>
-                </div>
-              )}
+            <Step done={Boolean(result)} active={stage === "looking"} label={stage === "looking" ? "Looking at your photo" : "Looked at your photo"}>
+              {result && <p className="mt-1 font-display text-lg italic text-ink">&ldquo;{result.seen}&rdquo;</p>}
             </Step>
 
-            {seen && (
-              <Step done active={false} label="Your device saw:">
-                <p className="mt-1 font-display text-lg italic text-ink">&ldquo;{seen}&rdquo;</p>
-                {vision.device && (
-                  <p className="mt-1 text-xs text-muted">
-                    Seen on this device{vision.device === "wasm" ? " (CPU mode, a bit slower)" : ""}. The photo wasn&apos;t uploaded.
-                  </p>
-                )}
-              </Step>
-            )}
-
-            {(stage === "asking" || stage === "done") && (
-              <Step done={stage === "done"} active={stage === "asking"} label={stage === "asking" ? "Working out the material" : "Best guess"} />
-            )}
-
             <AnimatePresence>
-              {result && stage === "done" && <ResultCard key="result" result={result} onTest={onTest} onSuggestBetter={onSuggestBetter} />}
+              {result && stage === "done" && (
+                <ResultCard key="result" result={result} onTest={onTest} onSuggestBetter={onSuggestBetter} onPick={pickAlternative} onCorrect={correct} />
+              )}
             </AnimatePresence>
 
             {error && (
@@ -201,11 +182,17 @@ function ResultCard({
   result: r,
   onTest,
   onSuggestBetter,
+  onPick,
+  onCorrect,
 }: {
   result: Identification;
   onTest: (id: Identification) => void;
   onSuggestBetter: (id: Identification) => void;
+  onPick: (material: string) => void;
+  onCorrect: (correction: string) => void;
 }) {
+  const [fix, setFix] = useState("");
+  const fixId = useId();
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="card flex flex-col gap-3 p-5">
       <div className="flex items-center gap-3">
@@ -218,6 +205,21 @@ function ResultCard({
           <span className="marker font-display text-sm italic text-ink">{CONFIDENCE[r.confidence]}</span>
         </div>
       </div>
+      {r.alternatives.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 text-sm">
+          <span className="text-muted">Could also be</span>
+          {r.alternatives.map((a) => (
+            <button
+              key={a}
+              type="button"
+              onClick={() => onPick(a)}
+              className="rounded-full border-2 border-ink/20 px-2.5 py-0.5 text-soft transition-colors hover:border-ink/50 hover:text-ink focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-iris"
+            >
+              {a}
+            </button>
+          ))}
+        </div>
+      )}
       <p className="text-soft">{r.reasoning}</p>
       <p className="text-sm text-soft">
         <span className="font-semibold">Check it yourself:</span> {r.checkTip}
@@ -235,6 +237,30 @@ function ResultCard({
           Suggest better materials
         </button>
       </div>
+      <form
+        className="mt-1 border-t-2 border-dashed border-sand pt-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (fix.trim()) onCorrect(fix.trim());
+        }}
+      >
+        <label htmlFor={fixId} className="mb-1.5 block font-display text-sm italic text-muted">
+          Not quite right? Tell us what it really is
+        </label>
+        <div className="flex gap-2">
+          <input
+            id={fixId}
+            value={fix}
+            maxLength={200}
+            onChange={(e) => setFix(e.target.value)}
+            placeholder="e.g. it's a metal water bottle"
+            className="min-w-0 flex-1 rounded-full border-2 border-ink/20 bg-paper-raised/80 px-4 py-1.5 text-ink placeholder:text-muted focus:border-iris focus:outline-none"
+          />
+          <button type="submit" disabled={!fix.trim()} className="btn shrink-0 bg-paper-raised px-4 py-1 text-base text-ink">
+            Fix it
+          </button>
+        </div>
+      </form>
     </motion.div>
   );
 }
