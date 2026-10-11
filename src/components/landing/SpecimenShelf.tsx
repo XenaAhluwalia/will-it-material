@@ -81,10 +81,25 @@ const LINEUP: Sample[] = [
 
 const TOO_MANY = { line: "Okay, that's enough poking.", look: { mood: "dizzy" } as SpecimenLook };
 
-/** A row of material samples on a shelf. Their eyes follow the cursor; poke one and it reacts. */
+interface Speech {
+  index: number;
+  line: string;
+  look: SpecimenLook;
+}
+
+/**
+ * A row of material samples on a shelf. Their eyes follow the cursor; poke one and it reacts.
+ * Only one bubble shows at a time: hovering or poking another sample, or tapping anywhere
+ * else, closes the previous one straight away.
+ */
 export function SpecimenShelf() {
+  const listRef = useRef<HTMLUListElement>(null);
   const refs = useRef<(HTMLLIElement | null)[]>([]);
   const [gazes, setGazes] = useState<{ x: number; y: number }[]>([]);
+  const [hovered, setHovered] = useState<number | null>(null);
+  const [speech, setSpeech] = useState<Speech | null>(null);
+  const pokes = useRef<number[]>([]);
+  const timer = useRef<number>(0);
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -112,11 +127,49 @@ export function SpecimenShelf() {
     };
   }, []);
 
+  // Tapping anywhere outside the shelf closes the bubble.
+  useEffect(() => {
+    const onDown = (e: PointerEvent) => {
+      if (!listRef.current?.contains(e.target as Node)) setSpeech(null);
+    };
+    document.addEventListener("pointerdown", onDown);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      window.clearTimeout(timer.current);
+    };
+  }, []);
+
+  const hover = (i: number | null) => {
+    setHovered(i);
+    if (i !== null) setSpeech((sp) => (sp && sp.index !== i ? null : sp));
+  };
+
+  const poke = (i: number) => {
+    const now = Date.now();
+    // Rapid pokes on the same sample add up; switching samples starts a fresh count.
+    const recent = speech?.index === i ? pokes.current.filter((t) => now - t < 4000) : [];
+    pokes.current = [...recent, now];
+    const said = pokes.current.length >= 4 ? TOO_MANY : LINEUP[i].poke;
+    setSpeech({ index: i, ...said });
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => setSpeech(null), 3200);
+  };
+
   return (
     <MotionConfig reducedMotion="user">
-      <ul className="flex items-end justify-center gap-4 border-b-2 border-sand px-2 sm:gap-6" aria-label="Example materials. Poke one!">
+      <ul ref={listRef} className="flex items-end justify-center gap-4 border-b-2 border-sand px-2 sm:gap-6" aria-label="Example materials. Poke one!">
         {LINEUP.map((m, i) => (
-          <ShelfItem key={m.name} sample={m} index={i} gaze={gazes[i]} ref={(el) => void (refs.current[i] = el)} />
+          <ShelfItem
+            key={m.name}
+            sample={m}
+            index={i}
+            gaze={gazes[i]}
+            said={speech?.index === i ? speech : null}
+            showPickMe={hovered === i && speech?.index !== i}
+            onHover={(on) => hover(on ? i : hovered === i ? null : hovered)}
+            onPoke={() => poke(i)}
+            ref={(el) => void (refs.current[i] = el)}
+          />
         ))}
       </ul>
     </MotionConfig>
@@ -127,28 +180,26 @@ function ShelfItem({
   sample: m,
   index,
   gaze,
+  said,
+  showPickMe,
+  onHover,
+  onPoke,
   ref,
 }: {
   sample: Sample;
   index: number;
   gaze?: { x: number; y: number };
+  said: Speech | null;
+  showPickMe: boolean;
+  onHover: (on: boolean) => void;
+  onPoke: () => void;
   ref: (el: HTMLLIElement | null) => void;
 }) {
   const squish = useAnimationControls();
-  const [hover, setHover] = useState(false);
-  const [said, setSaid] = useState<{ line: string; look: SpecimenLook } | null>(null);
-  const pokes = useRef<number[]>([]);
-  const timer = useRef<number>(0);
-
-  useEffect(() => () => window.clearTimeout(timer.current), []);
 
   const poke = () => {
-    const now = Date.now();
-    pokes.current = [...pokes.current.filter((t) => now - t < 4000), now];
-    setSaid(pokes.current.length >= 4 ? TOO_MANY : m.poke);
+    onPoke();
     squish.start({ scaleY: [1, 0.72, 1.12, 0.95, 1], scaleX: [1, 1.2, 0.92, 1.03, 1], transition: { duration: 0.55 } });
-    window.clearTimeout(timer.current);
-    timer.current = window.setTimeout(() => setSaid(null), 3200);
   };
 
   return (
@@ -158,16 +209,17 @@ function ShelfItem({
       initial={{ y: -36, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.35 + index * 0.12, type: "spring", stiffness: 380, damping: 15 }}
-      onPointerEnter={() => setHover(true)}
-      onPointerLeave={() => setHover(false)}
+      onPointerEnter={() => onHover(true)}
+      onPointerLeave={() => onHover(false)}
     >
-      <AnimatePresence mode="wait">
-        {(said || hover) && (
+      <AnimatePresence initial={false}>
+        {(said || showPickMe) && (
           <motion.div
-            key={said ? "said" : "pick"}
+            key={said ? `said-${said.line}` : "pick"}
             initial={{ opacity: 0, y: 6, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.9, transition: { duration: 0.1 } }}
+            // Leave instantly, so a closing bubble never overlaps the next one.
+            exit={{ opacity: 0, transition: { duration: 0 } }}
             transition={{ type: "spring", stiffness: 500, damping: 22 }}
             className="absolute bottom-full left-1/2 z-20 mb-1 w-max max-w-[11rem] -translate-x-1/2 rounded-2xl border-2 border-ink bg-paper-raised px-2.5 py-1 text-center shadow-[0_3px_0_var(--color-ink)]"
           >
@@ -192,8 +244,8 @@ function ShelfItem({
       <motion.button
         type="button"
         onClick={poke}
-        onFocus={() => setHover(true)}
-        onBlur={() => setHover(false)}
+        onFocus={() => onHover(true)}
+        onBlur={() => onHover(false)}
         animate={squish}
         whileHover={{ y: -4, rotate: index % 2 ? 3 : -3 }}
         style={{ originY: 1 }}

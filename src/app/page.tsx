@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SpecimenShelf } from "@/components/landing/SpecimenShelf";
+import { SollyNote } from "@/components/landing/SollyNote";
 import { NumberSticker } from "@/components/form/TestForm";
 import { Disclaimer } from "@/components/ui/Disclaimer";
 
@@ -23,7 +24,15 @@ export default function Home() {
           <span className="ink-texture block text-[clamp(3.6rem,15vw,10.5rem)] tracking-[-0.015em]">Material?</span>
         </h1>
 
-        <div className="mt-14 w-full max-w-3xl">
+        <div className="mt-10 w-full max-w-3xl">
+          {/* A handwritten-style note with a doodled arrow curling down to the shelf. */}
+          <p className="relative z-30 mb-8 flex items-end justify-center gap-1 font-display text-xl italic text-ink sm:text-2xl">
+            <SollyNote />
+            <svg aria-hidden width="44" height="40" viewBox="0 0 44 40" className="translate-y-5 text-ink">
+              <path d="M4 6 C 22 2, 36 12, 32 32" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+              <path d="M25 26 L 32 33 L 37 25" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </p>
           <SpecimenShelf />
         </div>
 

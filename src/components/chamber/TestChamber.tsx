@@ -69,10 +69,11 @@ export function TestChamber({ result, onComplete }: Props) {
             {!done && <span className="absolute inline-flex size-full animate-ping rounded-full bg-fail opacity-70" />}
             <span className={`relative inline-flex size-3 rounded-full ${done ? "bg-pass" : "bg-fail"}`} />
           </span>
-          <h2 className="font-display text-lg text-ink">{done ? "Test complete" : "Testing…"}</h2>
-          <span className="font-display text-sm italic text-muted">
-            Illustrative, not a simulation
-          </span>
+          <h2 className="min-w-0 font-display text-lg text-ink">
+            {done ? "Test complete: " : "Testing "}
+            <span className="italic">{material.name}</span>
+            {done ? "" : "…"}
+          </h2>
         </div>
         <div className="flex gap-2">
           {done && (
@@ -125,7 +126,7 @@ export function TestChamber({ result, onComplete }: Props) {
             </div>
 
             {/* Specimen lane */}
-            <div className="absolute inset-x-0 bottom-[14%] flex justify-center">
+            <div className="absolute inset-x-0 bottom-[11%] flex justify-center">
               <motion.div
                 key={done ? "final" : `${stage.id}-${pos.i}`}
                 initial={done ? false : { x: -360 }}
@@ -146,16 +147,19 @@ export function TestChamber({ result, onComplete }: Props) {
                   </motion.div>
                 )}
 
-                {/* Verdict */}
-                <div className="absolute -top-16 left-1/2 -translate-x-1/2">
+                {/* Verdict, beside the specimen so it never covers the stage title or the specimen. */}
+                <div className="absolute -right-16 top-0 z-10">
                   <AnimatePresence>{phase === "verdict" && <VerdictBadge key={`${stage.id}-v`} status={stage.status} />}</AnimatePresence>
                 </div>
 
-                {/* On an overall fail, the final pose faints over. */}
+                {/*
+                  On an overall fail, the final pose faints onto its side: it pivots on the body's
+                  bottom-left corner (so it stays on the floor) and slides back to the centre.
+                */}
                 <motion.div
-                  animate={done && result.overallStatus === "FAIL" ? { rotate: -72, x: 34, y: -4 } : { rotate: 0, x: 0, y: 0 }}
-                  transition={{ delay: done ? 0.4 : 0, type: "spring", stiffness: 120, damping: 11 }}
-                  style={{ originX: 0.5, originY: 0.85 }}
+                  animate={done && result.overallStatus === "FAIL" ? { rotate: -90, x: 100 } : { rotate: 0, x: 0 }}
+                  transition={{ delay: done ? 0.4 : 0, type: "spring", stiffness: 110, damping: 12 }}
+                  style={{ originX: 0.1, originY: 0.87 }}
                 >
                   <motion.div
                     key={`${stage.id}-${reacting}-${done}`}
@@ -165,9 +169,6 @@ export function TestChamber({ result, onComplete }: Props) {
                     <Specimen color={material.color} accent={material.accent} finish={material.finish} look={reaction.look} size={140} />
                   </motion.div>
                 </motion.div>
-                <div className="mt-1 max-w-[220px] truncate rounded-full bg-chamber-deep/75 px-3 py-1 text-center text-xs font-medium text-paper/85">
-                  {material.name}
-                </div>
               </motion.div>
             </div>
 
@@ -222,6 +223,7 @@ export function TestChamber({ result, onComplete }: Props) {
               );
             })}
           </ol>
+          <p className="mt-2 text-center font-display text-sm italic text-muted">Illustrative, not a simulation</p>
         </div>
       )}
     </section>
