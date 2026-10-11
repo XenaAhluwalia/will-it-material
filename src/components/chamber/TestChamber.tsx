@@ -15,15 +15,17 @@ const DURATION: Record<Phase, number> = { enter: 900, react: 1500, verdict: 1100
 interface Props {
   result: ScreeningResult;
   onComplete?: () => void;
+  /** Start at the finished pose, e.g. when reopening a saved test. */
+  startDone?: boolean;
 }
 
 /**
  * Cartoon test chamber. Walks the specimen through each test the screening chose and plays a
  * reaction based on each stage's screening verdict. Purely illustrative.
  */
-export function TestChamber({ result, onComplete }: Props) {
+export function TestChamber({ result, onComplete, startDone = false }: Props) {
   const stages = result.stages;
-  const [pos, setPos] = useState<{ i: number; phase: Phase }>({ i: 0, phase: "enter" });
+  const [pos, setPos] = useState<{ i: number; phase: Phase }>(startDone ? { i: result.stages.length, phase: "verdict" } : { i: 0, phase: "enter" });
   const done = pos.i >= stages.length;
   const completedRef = useRef(false);
   // Optional, user-controlled compact view once the run has finished.

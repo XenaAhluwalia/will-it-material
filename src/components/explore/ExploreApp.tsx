@@ -1,12 +1,19 @@
 "use client";
 
 import { AnimatePresence, MotionConfig, motion } from "framer-motion";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { MaterialSuggestion } from "@/types/material";
 import type { ScreeningResult, TestRequest } from "@/types/screening";
 import type { Doodle } from "@/types/doodle";
 import { describeConditions, retestRequest, runScreening, type Setup } from "@/lib/screening";
 import { fetchDoodle } from "@/lib/doodle/client";
+import { addEntry, attachDoodle, getEntry } from "@/lib/notebook";
+import { fetchSuggestions } from "@/lib/suggest/client";
+import type { MaterialPick, Suggestions } from "@/types/suggest";
+import { IdeaForm } from "@/components/suggest/IdeaForm";
+import { SuggestionsView, Thinking } from "@/components/suggest/SuggestionsView";
+import { PhotoPanel } from "@/components/photo/PhotoPanel";
+import type { Identification } from "@/types/identify";
 import { TestForm } from "@/components/form/TestForm";
 import { TestChamber } from "@/components/chamber/TestChamber";
 import { ResultSummary } from "@/components/results/ResultSummary";
@@ -16,18 +23,28 @@ import { ComparisonView } from "@/components/results/ComparisonView";
 import { ObjectDoodle } from "@/components/doodle/ObjectDoodle";
 import { Disclaimer } from "@/components/ui/Disclaimer";
 import { Brand } from "@/components/ui/Brand";
+import { Segmented } from "@/components/ui/Segmented";
+import { NotebookLink } from "@/components/notebook/NotebookLink";
 
 interface Run {
   id: number;
   result: ScreeningResult;
+  /** Reopened from the notebook: show the finished chamber straight away. */
+  reopened?: boolean;
   /** The run this one replaced via "Test this material", for comparison. */
   previous: ScreeningResult | null;
 }
 
+const MODES = [
+  { id: "form", label: "I know what I'm testing" },
+  { id: "idea", label: "I have an idea" },
+  { id: "photo", label: "Snap a photo" },
+] as const;
+
 /** What we're waiting on: a fresh test from the form, or a re-test of an alternative. */
 type Pending = { material: string; fromForm: boolean } | null;
 
-export function ExploreApp({ suggestions, initial }: { suggestions: MaterialSuggestion[]; initial: Setup }) {
+export function ExploreApp({ suggestions, initial, entryId }: { suggestions: MaterialSuggestion[]; initial: Setup; entryId?: string }) {
   const [setup, setSetup] = useState<Setup>(initial);
   const [run, setRun] = useState<Run | null>(null);
   const [pending, setPending] = useState<Pending>(null);
@@ -38,23 +55,57 @@ export function ExploreApp({ suggestions, initial }: { suggestions: MaterialSugg
   const [doodle, setDoodle] = useState<Doodle | null | undefined>(undefined);
   const abortRef = useRef<AbortController | null>(null);
   const doodleFor = useRef("");
+  // The latest sketch, for saving to the notebook alongside each result.
+  const latestDoodle = useRef<Doodle | null>(null);
+  const [opening, setOpening] = useState(Boolean(entryId));
+  // "I know what I'm testing" form, or "I have an idea" box.
+  const [mode, setMode] = useState<"form" | "idea" | "photo">("form");
+  const [idea, setIdea] = useState("");
+  const [picks, setPicks] = useState<Suggestions | null>(null);
+  const [thinking, setThinking] = useState(false);
+
+  // Reopen a saved test from the notebook (localStorage is only readable after mount).
+  useEffect(() => {
+    if (!entryId) return;
+    const entry = getEntry(entryId);
+    if (entry) {
+      doodleFor.current = entry.result.request.component.toLowerCase();
+      latestDoodle.current = entry.doodle;
+      setDoodle(entry.doodle);
+      setRun({ id: 1, result: entry.result, previous: null, reopened: true });
+      setRevealed(true);
+    } else {
+      setError("That notebook entry isn't saved on this device anymore.");
+    }
+    setOpening(false);
+  }, [entryId]);
+
+  /** Start (or reuse) the caricature for this object. */
+  const sketch = (component: string, material: string) => {
+    const key = component.toLowerCase();
+    if (doodleFor.current !== key) {
+      setDoodle(undefined);
+      latestDoodle.current = null;
+    }
+    doodleFor.current = key;
+    fetchDoodle(component, material).then((d) => {
+      if (d) attachDoodle(component, d);
+      if (doodleFor.current !== key) return;
+      latestDoodle.current = d;
+      setDoodle(d);
+    });
+  };
 
   const start = async (req: TestRequest, previous: ScreeningResult | null) => {
     abortRef.current?.abort();
     const ctrl = (abortRef.current = new AbortController());
     setPending({ material: req.material, fromForm: !previous });
     setError(null);
-    if (!previous) {
-      const key = req.component.toLowerCase();
-      if (doodleFor.current !== key) setDoodle(undefined);
-      doodleFor.current = key;
-      fetchDoodle(req.component, req.material).then((d) => {
-        if (doodleFor.current === key) setDoodle(d);
-      });
-    }
+    if (!previous) sketch(req.component, req.material);
     try {
       const result = await runScreening(req, ctrl.signal);
       setRun((r) => ({ id: (r?.id ?? 0) + 1, result, previous }));
+      addEntry(result, latestDoodle.current);
       setRevealed(false);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e) {
@@ -70,12 +121,55 @@ export function ExploreApp({ suggestions, initial }: { suggestions: MaterialSugg
     start({ component: s.component, material: s.material, conditions: describeConditions(s) }, null);
   };
 
+  /** Ask for three material picks, from a described idea or from the form with no material. */
+  const suggest = async (input: { idea: string } | { component: string; conditions: string }) => {
+    abortRef.current?.abort();
+    const ctrl = (abortRef.current = new AbortController());
+    setError(null);
+    setThinking(true);
+    try {
+      const result = await fetchSuggestions(input, ctrl.signal);
+      setPicks(result);
+      sketch(result.component, "");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (e) {
+      if (ctrl.signal.aborted) return;
+      setError(e instanceof Error ? e.message : "Something went wrong.");
+    } finally {
+      if (abortRef.current === ctrl) setThinking(false);
+    }
+  };
+
+  const testPick = (pick: MaterialPick) => {
+    if (!picks) return;
+    submitSetup({ component: picks.component, material: pick.name, ...picks.conditions });
+  };
+
+  /** Open the regular form with the idea's conditions filled in, so they can be tweaked. */
+  const editPicks = () => {
+    if (!picks) return;
+    setSetup({ component: picks.component, material: "", ...picks.conditions });
+    setPicks(null);
+    setMode("form");
+    setFormKey((k) => k + 1);
+  };
+
+  const identifiedSetup = (id: Identification): Setup => ({ component: id.component, material: id.material, ...id.conditions });
+  const testIdentified = (id: Identification) => submitSetup(identifiedSetup(id));
+  const suggestFromIdentified = (id: Identification) => {
+    const s = { ...identifiedSetup(id), material: "" };
+    setSetup(s);
+    suggest({ component: s.component, conditions: `${describeConditions(s)} It is currently made of ${id.material}.` });
+  };
+
   const onChamberDone = useCallback(() => setRevealed(true), []);
   const tryAnother = () => {
     abortRef.current?.abort();
     setPending(null);
     setError(null);
     setRun(null);
+    setPicks(null);
+    setThinking(false);
     setFormKey((k) => k + 1);
   };
 
@@ -84,19 +178,71 @@ export function ExploreApp({ suggestions, initial }: { suggestions: MaterialSugg
       <main className="mx-auto max-w-6xl px-4 sm:px-6">
         <header className="flex flex-wrap items-center justify-between gap-3 py-6">
           <Brand />
-          <Disclaimer compact />
+          <div className="flex items-center gap-4">
+            <Disclaimer compact />
+            <NotebookLink />
+          </div>
         </header>
 
         <AnimatePresence mode="wait">
-          {pending?.fromForm ? (
+          {opening ? null : pending?.fromForm ? (
             <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <GettingReady material={pending.material} component={setup.component} doodle={doodle} />
+            </motion.div>
+          ) : thinking ? (
+            <motion.div key="thinking" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <Thinking text="Thinking up materials" />
+            </motion.div>
+          ) : picks && !run ? (
+            <motion.div key="picks" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
+              <SuggestionsView suggestions={picks} doodle={doodle} onTest={testPick} onEdit={editPicks} onStartOver={tryAnother} />
             </motion.div>
           ) : !run ? (
             <motion.div key="form" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
               <h1 className="ink-texture mb-1 font-display text-4xl sm:text-5xl">What should we test?</h1>
-              <p className="mb-6 text-lg text-soft">Pick a thing, say what it&apos;s made of, then decide how rough its life gets.</p>
-              <TestForm key={formKey} suggestions={suggestions} initial={setup} error={error} onSubmit={submitSetup} />
+              <p className="mb-5 text-lg text-soft">
+                {mode === "form"
+                  ? "Pick a thing, say what it's made of, then decide how rough its life gets."
+                  : mode === "idea"
+                    ? "Not sure what to use? Describe what you want to make and we'll suggest materials."
+                    : "Wondering what something is made of? Snap it and find out."}
+              </p>
+              <div className="mb-6">
+                <Segmented
+                  label="How do you want to start?"
+                  size="lg"
+                  value={mode}
+                  options={MODES}
+                  onChange={(m) => {
+                    setMode(m);
+                    setError(null);
+                  }}
+                />
+              </div>
+              {mode === "form" ? (
+                <TestForm
+                  key={formKey}
+                  suggestions={suggestions}
+                  initial={setup}
+                  error={error}
+                  onSubmit={submitSetup}
+                  onSuggest={(s) => {
+                    setSetup(s);
+                    suggest({ component: s.component, conditions: describeConditions(s) });
+                  }}
+                />
+              ) : mode === "photo" ? (
+                <PhotoPanel onTest={testIdentified} onSuggestBetter={suggestFromIdentified} />
+              ) : (
+                <IdeaForm
+                  initial={idea}
+                  error={error}
+                  onSubmit={(text) => {
+                    setIdea(text);
+                    suggest({ idea: text });
+                  }}
+                />
+              )}
             </motion.div>
           ) : (
             <motion.div key="results" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} className="flex flex-col gap-4">
@@ -108,7 +254,7 @@ export function ExploreApp({ suggestions, initial }: { suggestions: MaterialSugg
               </div>
 
               <div className="grid gap-4 lg:grid-cols-[1.6fr_1fr] lg:items-start">
-                <TestChamber key={run.id} result={run.result} onComplete={onChamberDone} />
+                <TestChamber key={run.id} result={run.result} onComplete={onChamberDone} startDone={run.reopened} />
                 {revealed ? (
                   <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }}>
                     <ResultSummary result={run.result} doodle={doodle} />

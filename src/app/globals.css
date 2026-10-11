@@ -136,56 +136,62 @@ body::before {
   }
 }
 
-/* Temperature slider: a chunky round thumb on a cold-to-hot track. */
-input[type="range"].temp-range {
+/*
+ * Two-handle temperature slider: two range inputs stacked on one track. The inputs
+ * ignore the pointer except on their thumbs, so either handle can be grabbed.
+ */
+input[type="range"].temp-dual {
   appearance: none;
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: 2rem;
+  height: 100%;
+  margin: 0;
   background: transparent;
-  cursor: pointer;
+  pointer-events: none;
 }
-input[type="range"].temp-range::-webkit-slider-runnable-track {
-  height: 0.7rem;
-  border-radius: 999px;
-  border: 1.5px solid var(--color-ink);
-  background: linear-gradient(90deg, #a9c3e6, #c4c1ef 22%, #efe9de 40%, #e6c27a 62%, #e59a86 82%, #c9583f);
+input[type="range"].temp-dual::-webkit-slider-runnable-track {
+  background: transparent;
+  border: 0;
 }
-input[type="range"].temp-range::-moz-range-track {
-  height: 0.7rem;
-  border-radius: 999px;
-  border: 1.5px solid var(--color-ink);
-  background: linear-gradient(90deg, #a9c3e6, #c4c1ef 22%, #efe9de 40%, #e6c27a 62%, #e59a86 82%, #c9583f);
+input[type="range"].temp-dual::-moz-range-track {
+  background: transparent;
+  border: 0;
 }
-input[type="range"].temp-range::-webkit-slider-thumb {
+input[type="range"].temp-dual::-webkit-slider-thumb {
   appearance: none;
-  width: 1.6rem;
-  height: 1.6rem;
-  margin-top: -0.55rem;
+  pointer-events: auto;
+  cursor: grab;
+  width: 1.7rem;
+  height: 1.7rem;
   border-radius: 999px;
   border: 2px solid var(--color-ink);
   background: var(--color-paper-raised);
   box-shadow: 0 2px 0 var(--color-ink);
   transition: transform 120ms ease;
 }
-input[type="range"].temp-range::-moz-range-thumb {
-  width: 1.4rem;
-  height: 1.4rem;
+input[type="range"].temp-dual::-moz-range-thumb {
+  pointer-events: auto;
+  cursor: grab;
+  width: 1.5rem;
+  height: 1.5rem;
   border-radius: 999px;
   border: 2px solid var(--color-ink);
   background: var(--color-paper-raised);
   box-shadow: 0 2px 0 var(--color-ink);
 }
-input[type="range"].temp-range:active::-webkit-slider-thumb {
+input[type="range"].temp-dual:active::-webkit-slider-thumb {
+  cursor: grabbing;
   transform: scale(1.15);
 }
-input[type="range"].temp-range:focus-visible {
+input[type="range"].temp-dual:focus-visible {
   outline: none;
 }
-input[type="range"].temp-range:focus-visible::-webkit-slider-thumb {
+input[type="range"].temp-dual:focus-visible::-webkit-slider-thumb {
   outline: 3px solid var(--color-iris);
   outline-offset: 2px;
 }
-input[type="range"].temp-range:focus-visible::-moz-range-thumb {
+input[type="range"].temp-dual:focus-visible::-moz-range-thumb {
   outline: 3px solid var(--color-iris);
   outline-offset: 2px;
 }

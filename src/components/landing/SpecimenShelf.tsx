@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Specimen, type SpecimenLook } from "@/components/chamber/Specimen";
 import type { SurfaceFinish } from "@/types/material";
+import { SollyNote } from "./SollyNote";
 
 interface Sample {
   name: string;
@@ -155,8 +156,24 @@ export function SpecimenShelf() {
     timer.current = window.setTimeout(() => setSpeech(null), 3200);
   };
 
+  // A specimen's bubble rises into the note's spot, so the note steps aside while one shows.
+  const bubbleShowing = speech !== null || hovered !== null;
+
   return (
     <MotionConfig reducedMotion="user">
+      {/* A handwritten-style note with a doodled arrow curling down to the shelf. */}
+      <motion.p
+        animate={{ opacity: bubbleShowing ? 0 : 1, y: bubbleShowing ? -6 : 0 }}
+        transition={{ duration: 0.15 }}
+        aria-hidden={bubbleShowing || undefined}
+        className={`relative z-30 mb-8 flex items-end justify-center gap-1 font-display text-xl italic text-ink sm:text-2xl ${bubbleShowing ? "pointer-events-none" : ""}`}
+      >
+        <SollyNote />
+        <svg aria-hidden width="44" height="40" viewBox="0 0 44 40" className="translate-y-5 text-ink">
+          <path d="M4 6 C 22 2, 36 12, 32 32" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+          <path d="M25 26 L 32 33 L 37 25" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </motion.p>
       <ul ref={listRef} className="flex items-end justify-center gap-4 border-b-2 border-sand px-2 sm:gap-6" aria-label="Example materials. Poke one!">
         {LINEUP.map((m, i) => (
           <ShelfItem

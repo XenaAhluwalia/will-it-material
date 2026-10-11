@@ -1,4 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { getClient } from "@/lib/anthropic";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import type { ScreeningResult, TestRequest } from "@/types/screening";
 import { ModelOutputSchema } from "./schema";
@@ -19,11 +19,6 @@ export class ScreeningError extends Error {
   }
 }
 
-let client: Anthropic | null = null;
-// Org-level API keys (not scoped to a workspace) must name the workspace on every request.
-const workspaceId = process.env.ANTHROPIC_WORKSPACE_ID?.trim();
-const getClient = () =>
-  (client ??= new Anthropic(workspaceId ? { defaultHeaders: { "anthropic-workspace-id": workspaceId } } : {}));
 
 export async function screenWithClaude(request: TestRequest): Promise<ScreeningResult> {
   const response = await getClient().beta.messages.parse({

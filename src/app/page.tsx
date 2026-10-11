@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { SpecimenShelf } from "@/components/landing/SpecimenShelf";
-import { SollyNote } from "@/components/landing/SollyNote";
 import { NumberSticker } from "@/components/form/TestForm";
 import { Disclaimer } from "@/components/ui/Disclaimer";
+import { NotebookLink } from "@/components/notebook/NotebookLink";
 
 const STEPS = [
   { title: "Pick a thing", text: "Sneakers, acrylic nails, a Mars rover. Literally anything." },
@@ -14,8 +14,9 @@ const STEPS = [
 export default function Home() {
   return (
     <main className="mx-auto max-w-6xl px-4 sm:px-6">
-      <nav className="flex justify-end py-6">
+      <nav className="flex items-center justify-end gap-4 py-6">
         <Disclaimer compact />
+        <NotebookLink />
       </nav>
 
       <section className="flex flex-col items-center pb-16 pt-6 text-center sm:pt-12">
@@ -25,14 +26,6 @@ export default function Home() {
         </h1>
 
         <div className="mt-10 w-full max-w-3xl">
-          {/* A handwritten-style note with a doodled arrow curling down to the shelf. */}
-          <p className="relative z-30 mb-8 flex items-end justify-center gap-1 font-display text-xl italic text-ink sm:text-2xl">
-            <SollyNote />
-            <svg aria-hidden width="44" height="40" viewBox="0 0 44 40" className="translate-y-5 text-ink">
-              <path d="M4 6 C 22 2, 36 12, 32 32" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
-              <path d="M25 26 L 32 33 L 37 25" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </p>
           <SpecimenShelf />
         </div>
 

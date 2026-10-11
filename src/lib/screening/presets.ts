@@ -70,6 +70,32 @@ export const CONDITION_TOGGLES: { id: string; label: string; text: string }[] = 
   { id: "cheap", label: "Must be cheap", text: "It needs to be cheap to make." },
 ];
 
+/** Toggles grouped so the list is easy to scan. */
+export const TOGGLE_GROUPS: { label: string; ids: string[] }[] = [
+  { label: "Water and chemicals", ids: ["wet", "salt", "dishwasher", "chemicals"] },
+  { label: "What it touches", ids: ["food", "skin"] },
+  { label: "Where it lives", ids: ["sun", "vacuum", "radiation"] },
+  { label: "How it's used", ids: ["repeat", "drop"] },
+  { label: "It has to be", ids: ["light", "cheap"] },
+];
+
+/** What the preview sample says when a toggle is switched on. Just for fun. */
+export const TOGGLE_REACTIONS: Record<string, string> = {
+  wet: "splash!",
+  salt: "ew, salty",
+  dishwasher: "not the dishwasher!",
+  chemicals: "that smells strong",
+  food: "am I lunch?",
+  skin: "hi, human",
+  sun: "need sunscreen",
+  vacuum: "where did the air go?",
+  radiation: "I feel glowy",
+  repeat: "again? and again??",
+  drop: "please don't drop me",
+  light: "skipping dessert",
+  cheap: "budget mode on",
+};
+
 /** The sentence the screening model reads. */
 export function describeConditions(s: Setup): string {
   const parts = [
