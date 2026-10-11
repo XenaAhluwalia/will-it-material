@@ -153,9 +153,9 @@ export function TestChamber({ result, onComplete }: Props) {
 
                 {/* On an overall fail, the final pose faints over. */}
                 <motion.div
-                  animate={done && result.overallStatus === "FAIL" ? { rotate: -80, x: -30, y: 18 } : { rotate: 0, x: 0, y: 0 }}
+                  animate={done && result.overallStatus === "FAIL" ? { rotate: -72, x: 34, y: -4 } : { rotate: 0, x: 0, y: 0 }}
                   transition={{ delay: done ? 0.4 : 0, type: "spring", stiffness: 120, damping: 11 }}
-                  style={{ originX: 0.2, originY: 1 }}
+                  style={{ originX: 0.5, originY: 0.85 }}
                 >
                   <motion.div
                     key={`${stage.id}-${reacting}-${done}`}

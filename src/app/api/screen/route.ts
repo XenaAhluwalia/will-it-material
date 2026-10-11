@@ -38,6 +38,13 @@ export async function POST(req: Request) {
     if (error instanceof Anthropic.APIConnectionError) {
       return Response.json({ error: "Couldn't reach the screening service. Check your connection and try again." }, { status: 502 });
     }
+    // The SDK has no dedicated class for this setup mistake, so check the API's message.
+    if (error instanceof Anthropic.BadRequestError && /workspace/i.test(error.message)) {
+      return Response.json(
+        { error: "The server's API key needs a workspace. Set ANTHROPIC_WORKSPACE_ID (it starts with wrkspc_) in .env.local, or use a workspace-scoped key." },
+        { status: 500 },
+      );
+    }
     if (error instanceof Anthropic.APIError) {
       return Response.json({ error: "The screening service had a problem. Please try again." }, { status: 502 });
     }
