@@ -189,3 +189,60 @@ input[type="range"].temp-range:focus-visible::-moz-range-thumb {
   outline: 3px solid var(--color-iris);
   outline-offset: 2px;
 }
+
+/* The setup page is a paper lab worksheet: quiet controls, one bold action. */
+.worksheet-intro { padding: 30px 0 28px; }
+.worksheet-eyebrow { font-size: 10px; font-weight: 600; letter-spacing: .16em; color: var(--color-muted); }
+.worksheet-intro .worksheet-eyebrow { margin-bottom: 14px; }
+.worksheet-intro .worksheet-eyebrow span { color: var(--color-iris); font-size: 18px; margin-right: 6px; }
+.worksheet-intro h1 { font-size: clamp(38px, 5vw, 62px); line-height: 1.1; letter-spacing: -.04em; margin-bottom: 12px; }
+.worksheet-intro > p:last-child { font-size: 15px; line-height: 1.7; }
+.example-shelf { display: flex; align-items: center; gap: 20px; padding: 18px 0 24px; border-top: 1px solid rgb(74 67 57 / .18); }
+.example-shelf h2 { flex-shrink: 0; margin: 0; font-size: 16px; }
+.example-chip { border: 1px solid rgb(74 67 57 / .25); border-radius: 100px; font-family: var(--font-display); font-size: 14px; transition: background .15s, transform .15s; cursor: pointer; }
+.example-chip:hover { transform: translateY(-2px); border-color: var(--color-iris); }
+.example-chip[aria-pressed="true"] { border-color: var(--color-iris); box-shadow: 0 2px 0 var(--color-iris); }
+.worksheet-grid { display: grid; grid-template-columns: minmax(0, .78fr) minmax(0, 1.4fr); gap: 24px; align-items: start; }
+.test-worksheet .card { background: #f3eee4; border-color: #cfc4b2; border-radius: 18px; box-shadow: 0 5px 0 -2px #e9e0d1, 0 6px 0 -2px #cfc4b2; padding: 26px; }
+.step-heading { padding-bottom: 19px; border-bottom: 1px solid rgb(74 67 57 / .15); }
+.step-heading h2 { font-size: 25px; letter-spacing: -.025em; }
+.step-heading > span { width: 30px; height: 30px; font-size: 16px; border-width: 1.5px; }
+.specimen-preview { position: relative; text-align: center; border: 1px solid rgb(79 74 156 / .14); border-radius: 12px; padding: 18px 12px 15px; background-color: #e8e4ef; background-image: linear-gradient(rgb(79 74 156 / .045) 1px, transparent 1px), linear-gradient(90deg, rgb(79 74 156 / .045) 1px, transparent 1px); background-size: 20px 20px; }
+.specimen-preview .worksheet-eyebrow { font-size: 9px; color: var(--color-iris); }
+.specimen-preview-art { display: flex; justify-content: center; padding: 13px 0 5px; }
+.specimen-preview > span:last-child { font-size: 15px; color: var(--color-iris); }
+.test-worksheet .worksheet-input, .test-worksheet .material-field { border-width: 1px; border-radius: 10px; background-color: #faf7f0; font-size: 14px; }
+.test-worksheet [role="combobox"] { background: transparent; font-size: 14px; }
+.test-worksheet label, .test-worksheet legend { font-size: 12px; }
+.specimen-card > div:last-child > p:last-child { font-family: var(--font-display); font-style: italic; font-size: 14px; }
+.temperature-panel { padding: 17px 18px 10px; border-radius: 12px; background: #eae5db; border: 1px solid #d9cfbe; }
+.temperature-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px; margin-bottom: 18px; }
+.temperature-heading > span:first-child { font-size: 12px; }
+.temperature-panel .marker { font-size: 12px; }
+.temperature-panel input.temp-range { height: 28px; }
+.temperature-caption { margin-top: 8px; border-top: 1px solid #d5cbbc; padding: 9px 0 0; font-size: 10px; color: var(--color-muted); }
+.temperature-caption span { margin: 0 5px; }
+.force-option { border: 1px solid #c9bead; border-radius: 9px; font-family: var(--font-display); font-size: 16px; cursor: pointer; transition: background .15s; }
+.force-option[aria-pressed="true"] { border-color: var(--color-iris); box-shadow: 0 2px 0 #332e6d; }
+.force-option:hover { border-color: var(--color-iris); }
+.condition-group + .condition-group { margin-top: 14px; }
+.condition-group-label { margin-bottom: 7px; font-size: 11px; color: var(--color-muted); }
+.condition-toggle { border-width: 1px; min-height: 34px; font-size: 12px; padding: 5px 10px 5px 7px; gap: 6px; cursor: pointer; }
+.condition-toggle[aria-checked="true"] { border-color: #827cae; background: #dedaf1; box-shadow: none; }
+.condition-toggle[aria-checked="false"] { background: #f7f3eb; }
+.condition-toggle > span { transform: scale(.75); margin: -3px -4px; }
+.test-worksheet .run-test { border-width: 1.5px; border-radius: 12px; font-size: 20px; justify-content: space-between; margin-top: 2px; }
+.test-worksheet .run-test:hover:not(:disabled) { transform: translateY(-2px); }
+.test-worksheet .run-test span { font-family: var(--font-sans); font-size: 24px; }
+@media (min-width: 1024px) { .specimen-card { position: sticky; top: 24px; } }
+@media (max-width: 767px) {
+  .worksheet-intro { padding-top: 14px; }
+  .example-shelf { display: block; padding-top: 15px; }
+  .example-shelf h2 { margin-bottom: 12px; }
+  .worksheet-grid { grid-template-columns: 1fr; gap: 20px; }
+  .test-worksheet .card { padding: 20px; }
+  .specimen-preview-art { padding: 3px 0; }
+  .specimen-preview-art svg { width: 100px; height: auto; }
+  .condition-toggle { min-height: 38px; font-size: 12px; }
+}
+@media (prefers-reduced-motion: reduce) { .example-chip, .force-option { transition: none; } .example-chip:hover { transform: none; } }

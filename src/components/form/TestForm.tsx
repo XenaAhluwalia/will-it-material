@@ -23,7 +23,7 @@ interface Props {
 }
 
 const INPUT =
-  "w-full rounded-2xl border-2 border-ink/20 bg-paper-raised/80 px-4 py-3 font-medium text-ink placeholder:text-muted focus:border-iris focus:outline-none";
+  "worksheet-input w-full rounded-2xl border-2 border-ink/20 bg-paper-raised/80 px-4 py-3 font-medium text-ink placeholder:text-muted focus:border-iris focus:outline-none";
 
 export function TestForm({ suggestions, initial, error, onSubmit }: Props) {
   const [setup, setSetup] = useState<Setup>(initial);
@@ -40,15 +40,15 @@ export function TestForm({ suggestions, initial, error, onSubmit }: Props) {
 
   return (
     <form
-      className="flex flex-col gap-5"
+      className="test-worksheet flex flex-col gap-5"
       onSubmit={(e) => {
         e.preventDefault();
         if (canSubmit) onSubmit({ ...setup, component: setup.component.trim(), material: setup.material.trim(), notes: setup.notes.trim() });
       }}
     >
-      <section aria-labelledby="examples-heading">
+      <section className="example-shelf" aria-labelledby="examples-heading">
         <h2 id="examples-heading" className="mb-2 font-display text-lg italic text-soft">
-          Need an idea? Try one:
+          A little inspiration
         </h2>
         <div className="flex flex-wrap gap-2">
           {EXAMPLES.map((ex) => {
@@ -59,7 +59,7 @@ export function TestForm({ suggestions, initial, error, onSubmit }: Props) {
                 type="button"
                 aria-pressed={on}
                 onClick={() => setSetup({ ...ex, toggles: [...ex.toggles] })}
-                className={`btn px-4 py-1.5 text-base ${on ? "bg-iris-soft text-ink" : "bg-paper-raised text-ink"}`}
+                className={`example-chip px-4 py-1.5 text-base ${on ? "bg-iris-soft text-ink" : "bg-paper-raised text-ink"}`}
               >
                 {ex.title}
               </button>
@@ -68,9 +68,14 @@ export function TestForm({ suggestions, initial, error, onSubmit }: Props) {
         </div>
       </section>
 
-      <div className="grid gap-5 lg:grid-cols-[1fr_1.4fr] lg:items-start">
-        <section className="card flex flex-col gap-5 p-4 sm:p-5">
-          <StepTitle n={1} title="What are we testing?" />
+      <div className="worksheet-grid">
+        <section className="card specimen-card flex flex-col gap-5">
+          <StepTitle n={1} title="Meet your specimen" />
+          <div className="specimen-preview">
+            <span className="worksheet-eyebrow">MATERIAL SAMPLE / 01</span>
+            <div className="specimen-preview-art"><Specimen color={known?.color ?? "#c4c1ef"} finish="gloss" look={reactionTo(setup.tempMin, setup.tempMax)} size={132} /></div>
+            <span className="font-display text-lg italic">A small thing. A big experiment.</span>
+          </div>
           <div>
             <label htmlFor={componentId} className="mb-1.5 block text-sm font-semibold text-soft">
               The thing
@@ -91,18 +96,17 @@ export function TestForm({ suggestions, initial, error, onSubmit }: Props) {
           </div>
         </section>
 
-        <section className="card flex flex-col gap-6 p-4 sm:p-5">
-          <StepTitle n={2} title="How rough is its life?" />
+        <section className="card conditions-card flex flex-col gap-6">
+          <StepTitle n={2} title="Give it a little real life" />
 
           <TemperaturePicker
             min={setup.tempMin}
             max={setup.tempMax}
             onChange={(lo, hi) => setSetup((s) => ({ ...s, tempMin: lo, tempMax: hi }))}
-            color={known?.color ?? "#c4c1ef"}
             name={setup.material.trim() || "your material"}
           />
 
-          <fieldset>
+          <fieldset className="worksheet-section">
             <legend className="mb-2 text-sm font-semibold text-soft">How much force?</legend>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {LOAD_LEVELS.map((l) => {
@@ -113,7 +117,8 @@ export function TestForm({ suggestions, initial, error, onSubmit }: Props) {
                     type="button"
                     aria-pressed={on}
                     onClick={() => set("load", l.id)}
-                    className={`btn px-3 py-2 text-base ${on ? "bg-iris text-paper-raised" : "bg-paper-raised text-ink"}`}
+                    title={l.text}
+                    className={`force-option px-3 py-2 text-base ${on ? "bg-iris text-paper-raised" : "bg-paper-raised text-ink"}`}
                   >
                     {l.label}
                   </button>
@@ -122,13 +127,23 @@ export function TestForm({ suggestions, initial, error, onSubmit }: Props) {
             </div>
           </fieldset>
 
-          <fieldset>
-            <legend className="mb-2 text-sm font-semibold text-soft">Flip on anything that applies</legend>
-            <div className="flex flex-wrap gap-2">
-              {CONDITION_TOGGLES.map((t) => (
-                <Toggle key={t.id} label={t.label} on={setup.toggles.includes(t.id)} onClick={() => toggle(t.id)} />
-              ))}
-            </div>
+          <fieldset className="worksheet-section">
+            <legend className="mb-1 text-sm font-semibold text-soft">What will it encounter?</legend>
+            <p className="mb-4 text-xs text-muted">Pick everything that belongs in its day-to-day.</p>
+            {[
+              { name: "Everyday encounters", ids: ["wet", "salt", "dishwasher", "food", "skin", "sun", "chemicals"] },
+              { name: "Wear & tear", ids: ["repeat", "drop"] },
+              { name: "Special missions", ids: ["vacuum", "radiation", "light", "cheap"] },
+            ].map((group) => (
+              <div className="condition-group" key={group.name}>
+                <p className="condition-group-label">{group.name}</p>
+                <div className="flex flex-wrap gap-2">
+                  {CONDITION_TOGGLES.filter((t) => group.ids.includes(t.id)).map((t) => (
+                    <Toggle key={t.id} label={t.label} on={setup.toggles.includes(t.id)} onClick={() => toggle(t.id)} />
+                  ))}
+                </div>
+              </div>
+            ))}
           </fieldset>
 
           <div>
@@ -151,8 +166,8 @@ export function TestForm({ suggestions, initial, error, onSubmit }: Props) {
             </p>
           )}
 
-          <button type="submit" disabled={!canSubmit} className="btn bg-iris px-6 py-3.5 text-xl text-paper-raised">
-            Run the test
+          <button type="submit" disabled={!canSubmit} className="btn run-test bg-iris px-6 py-3.5 text-xl text-paper-raised">
+            Run the test <span aria-hidden>↗</span>
           </button>
           {!canSubmit && <p className="-mt-3 text-center text-sm text-muted">Name a thing and a material to start.</p>}
         </section>
@@ -163,7 +178,7 @@ export function TestForm({ suggestions, initial, error, onSubmit }: Props) {
 
 function StepTitle({ n, title }: { n: number; title: string }) {
   return (
-    <div className="flex items-center gap-3">
+    <div className="step-heading flex items-center gap-3">
       <NumberSticker n={n} />
       <h2 className="font-display text-2xl text-ink">{title}</h2>
     </div>
@@ -190,7 +205,7 @@ function Toggle({ label, on, onClick }: { label: string; on: boolean; onClick: (
       role="switch"
       aria-checked={on}
       onClick={onClick}
-      className={`group inline-flex items-center gap-2 rounded-full border-2 py-1 pl-1.5 pr-3 text-sm font-medium transition-colors focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-iris ${
+      className={`condition-toggle group inline-flex items-center gap-2 rounded-full border-2 py-1 pl-1.5 pr-3 text-sm font-medium transition-colors focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-iris ${
         on ? "border-ink bg-iris-soft text-ink shadow-[0_2px_0_var(--color-ink)]" : "border-ink/25 text-soft hover:border-ink/60"
       }`}
     >
@@ -211,37 +226,22 @@ function TemperaturePicker({
   min,
   max,
   onChange,
-  color,
   name,
 }: {
   min: number;
   max: number;
   onChange: (lo: number, hi: number) => void;
-  color: string;
   name: string;
 }) {
   const look = reactionTo(min, max);
   return (
-    <div className="flex items-center gap-4">
+    <div className="temperature-panel">
+      <div className="temperature-heading"><span className="text-sm font-semibold">Temperature range</span><span className="font-display text-sm italic text-muted">From brrr to sizzling.</span></div>
       <div className="flex-1 space-y-3">
         <TempSlider label="Coldest" value={min} onChange={(v) => onChange(v, Math.max(v, max))} />
         <TempSlider label="Hottest" value={max} onChange={(v) => onChange(Math.min(v, min), v)} />
       </div>
-      <figure className="flex w-20 shrink-0 flex-col items-center sm:w-24">
-        <motion.div
-          key={`${look.mood}-${!!look.frost}-${!!look.sweat}`}
-          initial={{ scale: 0.85, rotate: -6 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ type: "spring", stiffness: 400, damping: 12 }}
-          className="w-full [&_svg]:h-auto [&_svg]:w-full"
-        >
-          <Specimen color={color} finish="gloss" look={look} size={96} />
-        </motion.div>
-        <figcaption className="sr-only">Preview of {name} reacting to these temperatures</figcaption>
-        <span aria-hidden className="text-center font-display text-sm italic text-muted">
-          {look.line}
-        </span>
-      </figure>
+      <p className="temperature-caption">{name} <span aria-hidden>·</span> {look.line} at these temperatures</p>
     </div>
   );
 }

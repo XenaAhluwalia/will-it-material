@@ -94,8 +94,11 @@ export function ExploreApp({ suggestions, initial }: { suggestions: MaterialSugg
             </motion.div>
           ) : !run ? (
             <motion.div key="form" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }}>
-              <h1 className="ink-texture mb-1 font-display text-4xl sm:text-5xl">What should we test?</h1>
-              <p className="mb-6 text-lg text-soft">Pick a thing, say what it&apos;s made of, then decide how rough its life gets.</p>
+              <div className="worksheet-intro">
+                <p className="worksheet-eyebrow"><span aria-hidden>✳</span> THE EVERYDAY MATERIALS LAB</p>
+                <h1 className="ink-texture font-display">What should we test?</h1>
+                <p className="text-soft">Pick a thing, choose its material, and see what life throws at it.</p>
+              </div>
               <TestForm key={formKey} suggestions={suggestions} initial={setup} error={error} onSubmit={submitSetup} />
             </motion.div>
           ) : (

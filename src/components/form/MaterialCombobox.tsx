@@ -52,7 +52,7 @@ export function MaterialCombobox({ suggestions, value, onChange }: Props) {
 
   return (
     <div className="relative">
-      <div className="flex items-center gap-3 rounded-2xl border-2 border-ink/20 bg-paper-raised/80 px-4 py-3 focus-within:border-iris">
+      <div className="material-field flex items-center gap-3 rounded-2xl border-2 border-ink/20 bg-paper-raised/80 px-4 py-3 focus-within:border-iris">
         <span
           aria-hidden
           className="grid size-5 shrink-0 place-items-center rounded-md text-xs ring-1 ring-ink/25"
