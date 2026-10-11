@@ -3,10 +3,13 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useId, useRef, useState } from "react";
 import type { Identification } from "@/types/identify";
-import { fetchIdentification, photoToBase64 } from "@/lib/identify/client";
+import { fetchIdentification, photoToBase64, type IdentifyInput } from "@/lib/identify/client";
+import { describePhoto, onVisionStatus, shrinkPhoto, warmUpVision, type VisionStatus } from "@/lib/vision/client";
 import { Specimen } from "@/components/chamber/Specimen";
 
-type Stage = "idle" | "looking" | "done" | "error";
+type Stage = "idle" | "looking" | "asking" | "done" | "error";
+
+const ON_DEVICE_KEY = "wim:photo-on-device";
 
 interface Props {
   onTest: (id: Identification) => void;
@@ -14,26 +17,53 @@ interface Props {
 }
 
 /**
- * "Snap a photo": the photo is shrunk in the browser, then Claude looks at it and names
- * the likely material. The photo is used for that one request and not stored.
+ * "Snap a photo", two modes:
+ * - On-device (default): a small vision model in this browser describes the photo and
+ *   Claude only gets that text. The photo never leaves the device.
+ * - Fast: the photo is shrunk and sent to Claude, used for that one request and not stored.
  */
 export function PhotoPanel({ onTest, onSuggestBetter }: Props) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [stage, setStage] = useState<Stage>("idle");
-  const [image, setImage] = useState("");
+  /** What we sent to Claude for the current photo, reused for corrections. */
+  const [input, setInput] = useState<IdentifyInput | null>(null);
   const [result, setResult] = useState<Identification | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [onDevice, setOnDevice] = useState(true);
+  const [vision, setVision] = useState<VisionStatus>({ percent: null, ready: false, device: null });
 
   useEffect(() => () => void (photoUrl && URL.revokeObjectURL(photoUrl)), [photoUrl]);
+  useEffect(() => onVisionStatus(setVision), []);
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(ON_DEVICE_KEY) === "off") setOnDevice(false);
+    } catch {
+      // Storage blocked: keep the default.
+    }
+  }, []);
+  // Start the one-time model download as soon as on-device mode is showing, so it's
+  // (partly) ready by the time a photo is chosen.
+  useEffect(() => {
+    if (onDevice) warmUpVision();
+  }, [onDevice]);
 
-  const identify = async (photo: string, correction?: string) => {
-    setStage("looking");
+  const chooseMode = (next: boolean) => {
+    setOnDevice(next);
+    try {
+      localStorage.setItem(ON_DEVICE_KEY, next ? "on" : "off");
+    } catch {
+      // Storage blocked: the choice lasts until the page reloads.
+    }
+  };
+
+  const ask = async (what: IdentifyInput, correction?: string) => {
+    setStage("asking");
     setError(null);
     try {
-      setResult(await fetchIdentification(photo, correction));
+      setResult(await fetchIdentification(what, correction));
       setStage("done");
     } catch (e) {
       setStage("error");
@@ -45,21 +75,33 @@ export function PhotoPanel({ onTest, onSuggestBetter }: Props) {
     if (!file || !file.type.startsWith("image/")) return;
     setPhotoUrl(URL.createObjectURL(file));
     setResult(null);
+    setInput(null);
+    setError(null);
     setStage("looking");
-    let photo: string;
+    let what: IdentifyInput;
     try {
-      photo = await photoToBase64(file);
+      if (onDevice) {
+        const description = await describePhoto(await shrinkPhoto(file));
+        if (!description) throw new Error("empty");
+        what = { description };
+      } else {
+        what = { image: await photoToBase64(file) };
+      }
     } catch {
       setStage("error");
-      setError("We couldn't open that photo. Try a JPEG or PNG.");
+      setError(
+        onDevice
+          ? "The on-device model couldn't read that photo. Try another one, with one object filling the frame."
+          : "We couldn't open that photo. Try a JPEG or PNG.",
+      );
       return;
     }
-    setImage(photo);
-    await identify(photo);
+    setInput(what);
+    await ask(what);
   };
 
   /** Ask again with the student's own correction ("it's a metal water bottle"). */
-  const correct = (correction: string) => identify(image, correction);
+  const correct = (correction: string) => input && ask(input, correction);
 
   /** Swap in one of the runner-up materials as the main guess. */
   const pickAlternative = (name: string) =>
@@ -70,9 +112,12 @@ export function PhotoPanel({ onTest, onSuggestBetter }: Props) {
     setStage("idle");
     setResult(null);
     setError(null);
-    setImage("");
+    setInput(null);
     if (inputRef.current) inputRef.current.value = "";
   };
+
+  const deviceRun = input ? "description" in input : onDevice;
+  const downloading = stage === "looking" && deviceRun && !vision.ready;
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-5">
@@ -87,32 +132,42 @@ export function PhotoPanel({ onTest, onSuggestBetter }: Props) {
       />
 
       {stage === "idle" ? (
-        <label
-          htmlFor={inputId}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragging(true);
-          }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDragging(false);
-            handleFile(e.dataTransfer.files?.[0]);
-          }}
-          className={`card flex cursor-pointer flex-col items-center gap-4 border-2 border-dashed p-10 text-center transition-colors ${
-            dragging ? "border-iris bg-iris-soft/40" : "border-ink/30 hover:border-ink/60"
-          }`}
-        >
-          <CameraIcon />
-          <span className="font-display text-3xl text-ink">Snap or drop a photo</span>
-          <span className="max-w-md text-soft">
-            One object, filling most of the frame, works best. We&apos;ll guess what it&apos;s made of and whether something else would do better.
-          </span>
-          <span className="btn mt-1 bg-iris px-6 py-2.5 text-lg text-paper-raised">Choose a photo</span>
-          <span className="text-sm text-muted">
-Your photo is shrunk, checked by Claude and not saved.
-          </span>
-        </label>
+        <>
+          <label
+            htmlFor={inputId}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDragging(true);
+            }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragging(false);
+              handleFile(e.dataTransfer.files?.[0]);
+            }}
+            className={`card flex cursor-pointer flex-col items-center gap-4 border-2 border-dashed p-10 text-center transition-colors ${
+              dragging ? "border-iris bg-iris-soft/40" : "border-ink/30 hover:border-ink/60"
+            }`}
+          >
+            <CameraIcon />
+            <span className="font-display text-3xl text-ink">Snap or drop a photo</span>
+            <span className="max-w-md text-soft">
+              One object, filling most of the frame, works best. We&apos;ll guess what it&apos;s made of and whether something else would do better.
+            </span>
+            <span className="btn mt-1 bg-iris px-6 py-2.5 text-lg text-paper-raised">Choose a photo</span>
+            <span className="text-sm text-muted">
+              {onDevice ? (
+                <>
+                  <span className="marker font-display italic text-ink">stays on your device</span> A tiny AI model looks at it right here in
+                  your browser.
+                </>
+              ) : (
+                "Your photo is shrunk, checked by Claude and not saved."
+              )}
+            </span>
+          </label>
+          <ModeSwitch onDevice={onDevice} onChange={chooseMode} vision={vision} />
+        </>
       ) : (
         <div className="grid items-start gap-6 md:grid-cols-[minmax(0,15rem)_1fr]">
           {photoUrl && (
@@ -129,9 +184,39 @@ Your photo is shrunk, checked by Claude and not saved.
           )}
 
           <div className="flex min-w-0 flex-col gap-3" aria-live="polite">
-            <Step done={Boolean(result)} active={stage === "looking"} label={stage === "looking" ? "Looking at your photo" : "Looked at your photo"}>
-              {result && <p className="mt-1 font-display text-lg italic text-ink">&ldquo;{result.seen}&rdquo;</p>}
-            </Step>
+            {deviceRun ? (
+              <>
+                <Step
+                  done={stage !== "looking"}
+                  active={stage === "looking"}
+                  label={downloading ? "Waking up the on-device model" : stage === "looking" ? "Your device is looking at your photo" : "Your device saw:"}
+                >
+                  {downloading && (
+                    <div className="mt-2">
+                      <div className="h-3 overflow-hidden rounded-full border-2 border-ink bg-paper-raised">
+                        <motion.div className="h-full bg-iris" animate={{ width: `${vision.percent ?? 2}%` }} />
+                      </div>
+                      <p className="mt-1 text-sm text-muted">One-time download ({vision.percent ?? 0}%). After this it works much faster.</p>
+                    </div>
+                  )}
+                  {input && "description" in input && (
+                    <>
+                      <p className="mt-1 font-display text-lg italic text-ink">&ldquo;{input.description}&rdquo;</p>
+                      <p className="mt-1 text-xs text-muted">
+                        Seen on this device{vision.device === "wasm" ? " (CPU mode, a bit slower)" : ""}. The photo wasn&apos;t uploaded.
+                      </p>
+                    </>
+                  )}
+                </Step>
+                {(stage === "asking" || stage === "done") && (
+                  <Step done={stage === "done"} active={stage === "asking"} label={stage === "asking" ? "Working out the material" : "Best guess"} />
+                )}
+              </>
+            ) : (
+              <Step done={stage === "done"} active={stage === "looking" || stage === "asking"} label={stage === "done" ? "Looked at your photo" : "Looking at your photo"}>
+                {result && <p className="mt-1 font-display text-lg italic text-ink">&ldquo;{result.seen}&rdquo;</p>}
+              </Step>
+            )}
 
             <AnimatePresence>
               {result && stage === "done" && (
@@ -153,6 +238,34 @@ Your photo is shrunk, checked by Claude and not saved.
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ModeSwitch({ onDevice, onChange, vision }: { onDevice: boolean; onChange: (v: boolean) => void; vision: VisionStatus }) {
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={onDevice}
+        onClick={() => onChange(!onDevice)}
+        className="flex items-center gap-2.5 rounded-full border-2 border-ink/20 bg-paper-raised/80 px-3 py-1.5 font-semibold text-ink transition-colors hover:border-ink/50 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-iris"
+      >
+        <span aria-hidden className={`relative h-5 w-9 rounded-full border-2 border-ink transition-colors ${onDevice ? "bg-iris" : "bg-paper"}`}>
+          <motion.span className="absolute top-0.5 size-3 rounded-full bg-ink" animate={{ left: onDevice ? 18 : 2 }} transition={{ type: "spring", stiffness: 500, damping: 30 }} />
+        </span>
+        Keep my photo on this device
+      </button>
+      <span className="text-muted">
+        {onDevice
+          ? vision.ready
+            ? "Model ready."
+            : vision.percent !== null
+              ? `Getting the model ready… ${vision.percent}%`
+              : "Private, slower the first time."
+          : "Faster: the photo is sent to Claude."}
+      </span>
     </div>
   );
 }

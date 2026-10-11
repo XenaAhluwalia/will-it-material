@@ -2,7 +2,7 @@ import type { Suggestions } from "./suggest";
 
 /** Claude's read on a photo. */
 export interface Identification {
-  /** One sentence on what Claude sees in the photo. */
+  /** What was seen: the on-device model's description, or Claude's one-line read of the photo. */
   seen: string;
   component: string;
   /** Most likely specific material, e.g. "Stoneware ceramic". */

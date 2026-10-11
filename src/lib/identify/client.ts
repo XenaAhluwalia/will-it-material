@@ -1,11 +1,14 @@
 import type { Identification } from "@/types/identify";
 
-/** Client-side: send a downscaled photo for Claude to identify. */
-export async function fetchIdentification(image: string, correction?: string, signal?: AbortSignal): Promise<Identification> {
+/** What we send: the on-device description (photo stays on the device), or a downscaled photo. */
+export type IdentifyInput = { description: string } | { image: string };
+
+/** Client-side: ask Claude for the likely material. */
+export async function fetchIdentification(input: IdentifyInput, correction?: string, signal?: AbortSignal): Promise<Identification> {
   const res = await fetch("/api/identify", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ image, correction }),
+    body: JSON.stringify({ ...input, correction }),
     signal,
   });
   const body = await res.json().catch(() => null);
