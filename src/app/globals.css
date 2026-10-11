@@ -1,26 +1,191 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Palette: a stony oat-beige ground with a darker sand for edges and bands, plum
+ * graphite ink, and a pastel periwinkle highlight (with a deeper iris for text and
+ * buttons). Status colors borrow from real materials: verdigris, ochre, iron oxide.
+ */
+@theme {
+  --color-paper: #e3dacb;
+  --color-paper-raised: #efe9de;
+  --color-sand: #cdbfa8;
+  --color-ink: #2d2a30;
+  --color-soft: #4a4339;
+  --color-muted: #66594a;
+  --color-iris: #4f4a9c;
+  --color-iris-soft: #c4c1ef;
+  --color-pass: #3b6a4e;
+  --color-warn: #8a5e0e;
+  --color-fail: #a13d2c;
+  /* Dark graphite for the chamber window */
+  --color-chamber: #2f2b36;
+  --color-chamber-deep: #221f28;
+
+  --font-display: var(--font-old-standard), "Iowan Old Style", Georgia, serif;
+  --font-sans: var(--font-franklin), ui-sans-serif, system-ui, sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: light;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  min-height: 100dvh;
+}
+
+/* Microfiber: two stretched noise fields crossed at right angles, plus a fine grain. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.15;
+  mix-blend-mode: multiply;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012 0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.42 0 0 0 0 0.35 0 0 0 0 0.27 0 0 0 -1.6 1.05'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9 0.012' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.42 0 0 0 0 0.35 0 0 0 0 0.27 0 0 0 -1.6 1.05'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.42 0 0 0 0 0.35 0 0 0 0 0.27 0 0 0 -1.4 0.82'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");
+}
+
+/*
+ * Pressed-ink texture for titles: the glyphs are filled with ink, then flecked with
+ * paper-colored grain and faint fibers, like letterpress on cloth paper.
+ */
+@utility ink-texture {
+  color: var(--color-ink);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.9 0 0 0 0 0.86 0 0 0 0 0.8 3.2 0 0 0 -1.75'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.015 0.7' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.9 0 0 0 0 0.86 0 0 0 0 0.8 2.4 0 0 0 -1.45'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E"),
+    linear-gradient(var(--color-ink), var(--color-ink));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  @media (forced-colors: active) {
+    -webkit-text-fill-color: CanvasText;
+  }
+}
+
+/* A sheet of slightly lighter paper with a hairline ink edge. */
+@utility card {
+  border-radius: 0.875rem;
+  border: 1px solid rgb(122 104 78 / 0.3);
+  background: rgb(242 237 229 / 0.72);
+}
+
+::selection {
+  background: rgb(196 193 239 / 0.6);
+}
+
+:focus-visible {
+  outline-color: var(--color-iris);
+}
+
+/* A hand-drawn highlighter swash behind short text, in pastel periwinkle. */
+@utility marker {
+  padding: 0.05em 0.4em;
+  border-radius: 0.6em 0.25em 0.7em 0.3em;
+  background-image: linear-gradient(97deg, rgb(196 193 239 / 0.4) 0%, var(--color-iris-soft) 10%, var(--color-iris-soft) 88%, rgb(196 193 239 / 0.5) 100%);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/*
+ * Chunky cartoon button: ink outline and a solid ink shadow. Tilts up on hover and
+ * squishes down when pressed. Colors come from the element's own bg/text classes.
+ */
+@utility btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 2px solid var(--color-ink);
+  border-radius: 999px;
+  font-family: var(--font-display);
+  box-shadow: 0 4px 0 var(--color-ink);
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease,
+    background-color 150ms ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px) rotate(-1.5deg);
+    box-shadow: 0 6px 0 var(--color-ink);
+  }
+  &:active:not(:disabled) {
+    transform: translateY(3px) rotate(0deg);
+    box-shadow: 0 1px 0 var(--color-ink);
+  }
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+  &:focus-visible {
+    outline: 3px solid var(--color-iris);
+    outline-offset: 4px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    &:hover:not(:disabled) {
+      transform: none;
+    }
+  }
+}
+
+/* Temperature slider: a chunky round thumb on a cold-to-hot track. */
+input[type="range"].temp-range {
+  appearance: none;
+  width: 100%;
+  height: 2rem;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"].temp-range::-webkit-slider-runnable-track {
+  height: 0.7rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--color-ink);
+  background: linear-gradient(90deg, #a9c3e6, #c4c1ef 22%, #efe9de 40%, #e6c27a 62%, #e59a86 82%, #c9583f);
+}
+input[type="range"].temp-range::-moz-range-track {
+  height: 0.7rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--color-ink);
+  background: linear-gradient(90deg, #a9c3e6, #c4c1ef 22%, #efe9de 40%, #e6c27a 62%, #e59a86 82%, #c9583f);
+}
+input[type="range"].temp-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin-top: -0.55rem;
+  border-radius: 999px;
+  border: 2px solid var(--color-ink);
+  background: var(--color-paper-raised);
+  box-shadow: 0 2px 0 var(--color-ink);
+  transition: transform 120ms ease;
+}
+input[type="range"].temp-range::-moz-range-thumb {
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 999px;
+  border: 2px solid var(--color-ink);
+  background: var(--color-paper-raised);
+  box-shadow: 0 2px 0 var(--color-ink);
+}
+input[type="range"].temp-range:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+input[type="range"].temp-range:focus-visible {
+  outline: none;
+}
+input[type="range"].temp-range:focus-visible::-webkit-slider-thumb {
+  outline: 3px solid var(--color-iris);
+  outline-offset: 2px;
+}
+input[type="range"].temp-range:focus-visible::-moz-range-thumb {
+  outline: 3px solid var(--color-iris);
+  outline-offset: 2px;
 }

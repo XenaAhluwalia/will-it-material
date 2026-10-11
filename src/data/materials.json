@@ -1,0 +1,483 @@
+{
+  "version": 1,
+  "note": "Approximate, simplified values for conceptual screening only. Not design allowables.",
+  "materials": [
+    {
+      "id": "al-6061",
+      "name": "Aluminum 6061",
+      "family": "Aluminum alloy",
+      "summary": "A light, affordable, easy-to-machine aluminum used everywhere from bike frames to satellite brackets.",
+      "goodAt": "lightweight and easy to work with",
+      "highlights": [
+        "Lightweight and affordable",
+        "Easy to machine and weld",
+        "Good general-purpose aerospace alloy"
+      ],
+      "color": "#c4d3ea",
+      "properties": {
+        "density": 2.7,
+        "yieldStrength": 276,
+        "maxServiceTemp": 150,
+        "minServiceTemp": -250,
+        "thermalConductivity": 167,
+        "thermalExpansion": 23.6,
+        "corrosionResistance": 3,
+        "radiationResistance": 4,
+        "vacuumStability": 5,
+        "toughness": 4,
+        "strengthToWeight": 7
+      },
+      "accent": "#eef4ff",
+      "finish": "metallic"
+    },
+    {
+      "id": "al-7075",
+      "name": "Aluminum 7075",
+      "family": "Aluminum alloy",
+      "summary": "A high-strength aluminum common in aircraft structures. Stronger than 6061, but more prone to corrosion.",
+      "goodAt": "very strong for its weight",
+      "highlights": [
+        "Very high strength for an aluminum",
+        "Excellent strength-to-weight ratio",
+        "Proven in aircraft structures"
+      ],
+      "color": "#a9bcdb",
+      "properties": {
+        "density": 2.81,
+        "yieldStrength": 503,
+        "maxServiceTemp": 120,
+        "minServiceTemp": -250,
+        "thermalConductivity": 130,
+        "thermalExpansion": 23.4,
+        "corrosionResistance": 2,
+        "radiationResistance": 4,
+        "vacuumStability": 5,
+        "toughness": 3,
+        "strengthToWeight": 9
+      },
+      "accent": "#e3ecfb",
+      "finish": "metallic"
+    },
+    {
+      "id": "ti-6al-4v",
+      "name": "Ti-6Al-4V",
+      "family": "Titanium alloy",
+      "summary": "The workhorse titanium alloy: strong, fairly light, corrosion-proof, and comfortable at moderately high temperatures.",
+      "goodAt": "strong, light, and corrosion-resistant",
+      "highlights": [
+        "Excellent strength-to-weight ratio",
+        "Good aerospace performance",
+        "Shrugs off corrosion",
+        "Higher temperature capability than aluminum"
+      ],
+      "color": "#7f8b96",
+      "properties": {
+        "density": 4.43,
+        "yieldStrength": 880,
+        "maxServiceTemp": 400,
+        "minServiceTemp": -250,
+        "thermalConductivity": 6.7,
+        "thermalExpansion": 8.6,
+        "corrosionResistance": 5,
+        "radiationResistance": 4,
+        "vacuumStability": 5,
+        "toughness": 4,
+        "strengthToWeight": 9
+      },
+      "accent": "#5eead4",
+      "finish": "metallic"
+    },
+    {
+      "id": "inconel-718",
+      "name": "Inconel 718",
+      "family": "Nickel superalloy",
+      "summary": "A nickel superalloy built for jet engines and rocket parts. Keeps its strength when things get really hot, but it is heavy.",
+      "goodAt": "incredibly tough in extreme heat",
+      "highlights": [
+        "Keeps its strength at very high temperatures",
+        "Used in jet engines and rocket hardware",
+        "Excellent corrosion and radiation resistance"
+      ],
+      "color": "#cdc2ac",
+      "properties": {
+        "density": 8.19,
+        "yieldStrength": 1035,
+        "maxServiceTemp": 700,
+        "minServiceTemp": -250,
+        "thermalConductivity": 11.4,
+        "thermalExpansion": 13,
+        "corrosionResistance": 5,
+        "radiationResistance": 5,
+        "vacuumStability": 5,
+        "toughness": 5,
+        "strengthToWeight": 6
+      },
+      "accent": "#f6ecd6",
+      "finish": "metallic"
+    },
+    {
+      "id": "ss-316",
+      "name": "Stainless Steel 316",
+      "family": "Stainless steel",
+      "summary": "A marine-grade stainless steel. Very rust-resistant and tough, but heavy for its strength.",
+      "goodAt": "tough and very rust-resistant",
+      "highlights": [
+        "Marine-grade corrosion resistance",
+        "Tough and forgiving",
+        "Handles cold and radiation well"
+      ],
+      "color": "#97a1ae",
+      "properties": {
+        "density": 8,
+        "yieldStrength": 290,
+        "maxServiceTemp": 800,
+        "minServiceTemp": -250,
+        "thermalConductivity": 16.3,
+        "thermalExpansion": 16,
+        "corrosionResistance": 4,
+        "radiationResistance": 5,
+        "vacuumStability": 5,
+        "toughness": 5,
+        "strengthToWeight": 2
+      },
+      "accent": "#e5e9ef",
+      "finish": "metallic"
+    },
+    {
+      "id": "cfrp",
+      "name": "Carbon Fiber Composite",
+      "family": "Polymer composite (carbon/epoxy)",
+      "summary": "Carbon fibers in an epoxy resin. Super light and stiff, but the resin limits how hot it can get.",
+      "goodAt": "extremely light and stiff",
+      "highlights": [
+        "Best-in-class strength-to-weight ratio",
+        "Barely expands with temperature",
+        "Won't rust"
+      ],
+      "color": "#5a5578",
+      "properties": {
+        "density": 1.6,
+        "yieldStrength": 600,
+        "maxServiceTemp": 120,
+        "minServiceTemp": -150,
+        "thermalConductivity": 5,
+        "thermalExpansion": 0.5,
+        "corrosionResistance": 5,
+        "radiationResistance": 2,
+        "vacuumStability": 3,
+        "toughness": 2,
+        "strengthToWeight": 10
+      },
+      "accent": "#c4b5fd",
+      "finish": "gloss"
+    },
+    {
+      "id": "peek",
+      "name": "PEEK",
+      "family": "High-performance polymer",
+      "summary": "A tough engineering plastic that handles chemicals, moderate heat, and even space vacuum. Not very strong compared with metals.",
+      "goodAt": "light and chemical-proof",
+      "highlights": [
+        "Very light",
+        "Resists harsh chemicals",
+        "Low outgassing in vacuum"
+      ],
+      "color": "#a17be8",
+      "properties": {
+        "density": 1.32,
+        "yieldStrength": 100,
+        "maxServiceTemp": 250,
+        "minServiceTemp": -100,
+        "thermalConductivity": 0.25,
+        "thermalExpansion": 47,
+        "corrosionResistance": 5,
+        "radiationResistance": 4,
+        "vacuumStability": 4,
+        "toughness": 3,
+        "strengthToWeight": 4
+      },
+      "accent": "#efe6ff",
+      "finish": "gloss"
+    },
+    {
+      "id": "mg-az31b",
+      "name": "Magnesium AZ31B",
+      "family": "Magnesium alloy",
+      "summary": "One of the lightest structural metals. Very weight-efficient, but it corrodes easily.",
+      "goodAt": "the lightest structural metal around",
+      "highlights": [
+        "Ultra-lightweight metal",
+        "Good strength-to-weight ratio",
+        "Easy to machine"
+      ],
+      "color": "#bccdc6",
+      "properties": {
+        "density": 1.77,
+        "yieldStrength": 200,
+        "maxServiceTemp": 120,
+        "minServiceTemp": -100,
+        "thermalConductivity": 96,
+        "thermalExpansion": 26,
+        "corrosionResistance": 1,
+        "radiationResistance": 4,
+        "vacuumStability": 4,
+        "toughness": 3,
+        "strengthToWeight": 8
+      },
+      "accent": "#eef7f2",
+      "finish": "metallic"
+    },
+    {
+      "id": "alumina",
+      "name": "Alumina Ceramic",
+      "family": "Technical ceramic",
+      "summary": "A hard ceramic that laughs at heat and chemicals, but it is brittle and can crack under heavy or sudden loads.",
+      "goodAt": "nearly unbothered by heat and chemicals",
+      "highlights": [
+        "Handles extreme heat",
+        "Chemically inert",
+        "Very radiation resistant"
+      ],
+      "color": "#f1e9d2",
+      "properties": {
+        "density": 3.95,
+        "yieldStrength": 300,
+        "maxServiceTemp": 1500,
+        "minServiceTemp": -270,
+        "thermalConductivity": 30,
+        "thermalExpansion": 8.1,
+        "corrosionResistance": 5,
+        "radiationResistance": 5,
+        "vacuumStability": 5,
+        "toughness": 1,
+        "strengthToWeight": 4
+      },
+      "accent": "#fffaf0",
+      "finish": "matte"
+    },
+    {
+      "id": "steel-1018",
+      "name": "Carbon Steel 1018",
+      "family": "Carbon steel",
+      "summary": "Plain, cheap, everyday steel used in machine parts and frames. Strong and tough, but it rusts and gets brittle in deep cold.",
+      "goodAt": "cheap, strong, and easy to find",
+      "highlights": [
+        "Cheap and widely available",
+        "Tough and easy to weld",
+        "Handles moderate heat well"
+      ],
+      "color": "#737d8a",
+      "properties": {
+        "density": 7.87,
+        "yieldStrength": 370,
+        "maxServiceTemp": 400,
+        "minServiceTemp": -30,
+        "thermalConductivity": 51.9,
+        "thermalExpansion": 12,
+        "corrosionResistance": 1,
+        "radiationResistance": 5,
+        "vacuumStability": 5,
+        "toughness": 4,
+        "strengthToWeight": 3
+      },
+      "accent": "#c3cad4",
+      "finish": "metallic"
+    },
+    {
+      "id": "copper-c110",
+      "name": "Copper C110",
+      "family": "Copper",
+      "summary": "Pure copper, the champion at moving heat and electricity. Soft and heavy, so it's rarely used to carry big loads.",
+      "goodAt": "amazing at conducting heat and electricity",
+      "highlights": [
+        "Best-in-class heat conduction",
+        "Stays ductile even in deep cold",
+        "Easy to form"
+      ],
+      "color": "#c97b4b",
+      "properties": {
+        "density": 8.94,
+        "yieldStrength": 150,
+        "maxServiceTemp": 200,
+        "minServiceTemp": -270,
+        "thermalConductivity": 391,
+        "thermalExpansion": 17,
+        "corrosionResistance": 3,
+        "radiationResistance": 4,
+        "vacuumStability": 5,
+        "toughness": 5,
+        "strengthToWeight": 1
+      },
+      "accent": "#ffd2b0",
+      "finish": "metallic"
+    },
+    {
+      "id": "tungsten",
+      "name": "Tungsten",
+      "family": "Refractory metal",
+      "summary": "The metal with the highest melting point. Strong in extreme heat (when protected from oxygen), but very heavy and brittle when cold.",
+      "goodAt": "nearly unmeltable",
+      "highlights": [
+        "Survives extreme temperatures",
+        "Excellent radiation shielding",
+        "Very strong when hot"
+      ],
+      "color": "#646c78",
+      "properties": {
+        "density": 19.3,
+        "yieldStrength": 750,
+        "maxServiceTemp": 1650,
+        "minServiceTemp": -20,
+        "thermalConductivity": 173,
+        "thermalExpansion": 4.5,
+        "corrosionResistance": 3,
+        "radiationResistance": 5,
+        "vacuumStability": 5,
+        "toughness": 2,
+        "strengthToWeight": 2
+      },
+      "accent": "#b9c1cc",
+      "finish": "metallic"
+    },
+    {
+      "id": "nylon-66",
+      "name": "Nylon 6/6",
+      "family": "Engineering plastic",
+      "summary": "A common, tough engineering plastic used for gears, clips, and housings. Cheap and light, but it soaks up moisture and softens with heat.",
+      "goodAt": "light, tough, and cheap",
+      "highlights": [
+        "Light and inexpensive",
+        "Tough and wear-resistant",
+        "Easy to mold or 3D print"
+      ],
+      "color": "#c3b2f2",
+      "properties": {
+        "density": 1.14,
+        "yieldStrength": 70,
+        "maxServiceTemp": 120,
+        "minServiceTemp": -40,
+        "thermalConductivity": 0.25,
+        "thermalExpansion": 80,
+        "corrosionResistance": 3,
+        "radiationResistance": 2,
+        "vacuumStability": 2,
+        "toughness": 4,
+        "strengthToWeight": 3
+      },
+      "accent": "#f6f1ff",
+      "finish": "gloss"
+    },
+    {
+      "id": "ptfe",
+      "name": "PTFE (Teflon)",
+      "family": "Fluoropolymer",
+      "summary": "The slippery non-stick plastic. Almost nothing reacts with it and it handles deep cold, but it's very weak and hates radiation.",
+      "goodAt": "slippery and almost chemically indestructible",
+      "highlights": [
+        "Resists nearly every chemical",
+        "Super low friction",
+        "Works in deep cold"
+      ],
+      "color": "#ddd0f7",
+      "properties": {
+        "density": 2.2,
+        "yieldStrength": 12,
+        "maxServiceTemp": 260,
+        "minServiceTemp": -250,
+        "thermalConductivity": 0.25,
+        "thermalExpansion": 120,
+        "corrosionResistance": 5,
+        "radiationResistance": 1,
+        "vacuumStability": 4,
+        "toughness": 4,
+        "strengthToWeight": 1
+      },
+      "accent": "#ffffff",
+      "finish": "gloss"
+    },
+    {
+      "id": "kapton",
+      "name": "Kapton (Polyimide)",
+      "family": "Polyimide film",
+      "summary": "The gold-colored film wrapped around satellites. Handles huge temperature ranges and space vacuum, but it's a thin film, not a structural material.",
+      "goodAt": "a space-proven insulating film",
+      "highlights": [
+        "Huge temperature range",
+        "Very low outgassing in vacuum",
+        "Proven on spacecraft insulation"
+      ],
+      "color": "#8b5cf6",
+      "properties": {
+        "density": 1.42,
+        "yieldStrength": 69,
+        "maxServiceTemp": 400,
+        "minServiceTemp": -269,
+        "thermalConductivity": 0.12,
+        "thermalExpansion": 20,
+        "corrosionResistance": 4,
+        "radiationResistance": 4,
+        "vacuumStability": 5,
+        "toughness": 4,
+        "strengthToWeight": 3
+      },
+      "accent": "#fcd34d",
+      "finish": "gloss"
+    },
+    {
+      "id": "invar-36",
+      "name": "Invar 36",
+      "family": "Iron-nickel alloy",
+      "summary": "A special alloy that barely grows or shrinks with temperature. Used in telescope and instrument mounts, but it's heavy.",
+      "goodAt": "almost perfectly size-stable when temperatures change",
+      "highlights": [
+        "Barely expands with temperature",
+        "Great for precision instruments",
+        "Tough in deep cold"
+      ],
+      "color": "#8f969f",
+      "properties": {
+        "density": 8.05,
+        "yieldStrength": 275,
+        "maxServiceTemp": 260,
+        "minServiceTemp": -250,
+        "thermalConductivity": 10,
+        "thermalExpansion": 1.3,
+        "corrosionResistance": 2,
+        "radiationResistance": 5,
+        "vacuumStability": 5,
+        "toughness": 5,
+        "strengthToWeight": 2
+      },
+      "accent": "#d6dbe1",
+      "finish": "metallic"
+    },
+    {
+      "id": "borosilicate",
+      "name": "Borosilicate Glass",
+      "family": "Glass",
+      "summary": "Lab-grade glass (like Pyrex) that handles heat and temperature swings better than normal glass. Clear and chemical-proof, but brittle.",
+      "goodAt": "clear, heat-resistant, and chemical-proof",
+      "highlights": [
+        "Transparent",
+        "Handles temperature swings well for a glass",
+        "Chemically inert"
+      ],
+      "color": "#cbe6f2",
+      "properties": {
+        "density": 2.23,
+        "yieldStrength": 40,
+        "maxServiceTemp": 450,
+        "minServiceTemp": -200,
+        "thermalConductivity": 1.14,
+        "thermalExpansion": 3.3,
+        "corrosionResistance": 5,
+        "radiationResistance": 3,
+        "vacuumStability": 5,
+        "toughness": 1,
+        "strengthToWeight": 1
+      },
+      "accent": "#ffffff",
+      "finish": "gloss"
+    }
+  ]
+}
